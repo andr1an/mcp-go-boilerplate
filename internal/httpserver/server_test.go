@@ -44,7 +44,7 @@ func TestNewServer(t *testing.T) {
 
 	logger := slog.Default()
 
-	srv, err := New(cfg, logger)
+	srv, err := New(cfg, logger, "test")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

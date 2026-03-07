@@ -34,7 +34,7 @@ func main() {
 	logger := newLogger(cfg.LogLevel)
 	slog.SetDefault(logger)
 
-	srv, err := httpserver.New(cfg, logger)
+	srv, err := httpserver.New(cfg, logger, version)
 	if err != nil {
 		logger.Error("failed to build server", "error", err)
 		os.Exit(1)

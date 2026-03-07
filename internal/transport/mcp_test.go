@@ -50,7 +50,7 @@ func TestMCPHandlerListTools(t *testing.T) {
 		},
 	})
 
-	h := NewMCPHandler(reg)
+	h := NewMCPHandler(reg, "test")
 	s := httptest.NewServer(h)
 	defer s.Close()
 
@@ -110,7 +110,7 @@ func TestMCPHandlerCallTool(t *testing.T) {
 		},
 	})
 
-	h := NewMCPHandler(reg)
+	h := NewMCPHandler(reg, "test")
 	s := httptest.NewServer(h)
 	defer s.Close()
 
@@ -168,7 +168,7 @@ func TestMCPHandlerCallTool(t *testing.T) {
 
 func TestMCPHandlerMethodNotAllowed(t *testing.T) {
 	reg := tools.NewRegistry()
-	h := NewMCPHandler(reg)
+	h := NewMCPHandler(reg, "test")
 
 	req := httptest.NewRequest(http.MethodPut, "/mcp", nil)
 	rec := httptest.NewRecorder()
@@ -248,7 +248,7 @@ func TestMCPHandlerCallToolWithError(t *testing.T) {
 		err: tools.ErrToolNotFound,
 	})
 
-	h := NewMCPHandler(reg)
+	h := NewMCPHandler(reg, "test")
 	s := httptest.NewServer(h)
 	defer s.Close()
 
@@ -307,7 +307,7 @@ func TestMCPHandlerMultipleTools(t *testing.T) {
 		result:      map[string]any{"name": "b"},
 	})
 
-	h := NewMCPHandler(reg)
+	h := NewMCPHandler(reg, "test")
 	s := httptest.NewServer(h)
 	defer s.Close()
 
@@ -374,7 +374,7 @@ func TestMCPHandlerCallToolWithNilArguments(t *testing.T) {
 		result: "success",
 	})
 
-	h := NewMCPHandler(reg)
+	h := NewMCPHandler(reg, "test")
 	s := httptest.NewServer(h)
 	defer s.Close()
 

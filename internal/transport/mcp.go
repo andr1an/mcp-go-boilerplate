@@ -15,10 +15,10 @@ type MCPHandler struct {
 	streamable http.Handler
 }
 
-func NewMCPHandler(registry *tools.Registry) *MCPHandler {
+func NewMCPHandler(registry *tools.Registry, version string) *MCPHandler {
 	mcpServer := server.NewMCPServer(
 		"mcp-go-boilerplate",
-		"1.0.0",
+		version,
 		server.WithToolCapabilities(false),
 	)
 

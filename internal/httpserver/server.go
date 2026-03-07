@@ -17,7 +17,7 @@ type Server struct {
 	*http.Server
 }
 
-func New(cfg config.Config, logger *slog.Logger) (*Server, error) {
+func New(cfg config.Config, logger *slog.Logger, version string) (*Server, error) {
 	mux := http.NewServeMux()
 
 	registry := tools.NewRegistry()
@@ -25,7 +25,7 @@ func New(cfg config.Config, logger *slog.Logger) (*Server, error) {
 
 	mux.HandleFunc("/health", healthHandler)
 	mux.Handle("/mcp", chain(
-		transport.NewMCPHandler(registry),
+		transport.NewMCPHandler(registry, version),
 		middleware.RequestID,
 		middleware.Logging(logger),
 		buildAuthMiddleware(cfg),

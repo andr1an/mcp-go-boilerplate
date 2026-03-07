@@ -79,6 +79,8 @@ version=dev commit=none date=unknown
 
 For release binaries, metadata is injected at build time via `-ldflags` in the `Makefile`.
 
+The `version` value is also reported by the MCP server in protocol responses (e.g., during `initialize`).
+
 ## Endpoints
 
 ### Health Check
