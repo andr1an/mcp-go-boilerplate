@@ -288,7 +288,7 @@ Server configuration is controlled via environment variables.
 
 |**Variable**|**Default**|**Description**|
 |---|---|---|
-|`PORT`|8080|HTTP port|
+|`LISTEN_ADDR`|127.0.0.1:8080|Listen address (e.g., `127.0.0.1:8080`, `0.0.0.0:8080`, `[::]:8080`)|
 |`AUTH_MODE`|disabled|disabled or jwt|
 |`JWT_PUBLIC_KEY`|empty|RSA public key for JWT|
 |`LOG_LEVEL`|info|log level|

@@ -15,7 +15,7 @@ const (
 )
 
 type Config struct {
-	Port            string
+	ListenAddr      string
 	AuthMode        string
 	JWTPublicKey    string
 	LogLevel        string
@@ -28,7 +28,7 @@ type Config struct {
 
 func Load() (Config, error) {
 	cfg := Config{
-		Port:            getEnv("PORT", "8080"),
+		ListenAddr:      getEnv("LISTEN_ADDR", "127.0.0.1:8080"),
 		AuthMode:        strings.ToLower(getEnv("AUTH_MODE", AuthDisabled)),
 		JWTPublicKey:    getEnv("JWT_PUBLIC_KEY", ""),
 		LogLevel:        strings.ToLower(getEnv("LOG_LEVEL", "info")),
@@ -61,7 +61,7 @@ func (c Config) Validate() error {
 }
 
 func (c Config) Address() string {
-	return ":" + c.Port
+	return c.ListenAddr
 }
 
 func getEnv(key, fallback string) string {
