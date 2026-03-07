@@ -17,7 +17,7 @@ type MCPHandler struct {
 
 func NewMCPHandler(registry *tools.Registry) *MCPHandler {
 	mcpServer := server.NewMCPServer(
-		"mcp-koeri",
+		"mcp-go-boilerplate",
 		"1.0.0",
 		server.WithToolCapabilities(false),
 	)
@@ -44,7 +44,7 @@ func NewMCPHandler(registry *tools.Registry) *MCPHandler {
 				Content: []mcp.Content{
 					mcp.NewTextContent(toJSONString(result)),
 				},
-				StructuredContent: result,
+				StructuredContent: toStructuredContent(result),
 			}, nil
 		})
 	}
@@ -80,4 +80,13 @@ func toJSONString(v any) string {
 		return "{}"
 	}
 	return string(b)
+}
+
+func toStructuredContent(v any) map[string]any {
+	switch val := v.(type) {
+	case map[string]any:
+		return val
+	default:
+		return map[string]any{"result": v}
+	}
 }
