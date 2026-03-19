@@ -1,92 +1,37 @@
 package transport
 
 import (
-	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/andr1an/mcp-go-boilerplate/internal/tools"
 
-	"github.com/mark3labs/mcp-go/mcp"
-	"github.com/mark3labs/mcp-go/server"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 type MCPHandler struct {
-	streamable http.Handler
+	streamable *mcp.StreamableHTTPHandler
 }
 
-func NewMCPHandler(registry *tools.Registry, version string) *MCPHandler {
-	mcpServer := server.NewMCPServer(
-		"mcp-go-boilerplate",
-		version,
-		server.WithToolCapabilities(false),
+func NewMCPHandler(version string) *MCPHandler {
+	server := mcp.NewServer(
+		&mcp.Implementation{
+			Name:    "mcp-go-boilerplate",
+			Version: version,
+		},
+		nil,
 	)
 
-	for _, info := range registry.List() {
-		toolName := info.Name
-		mcpServer.AddTool(toMCPTool(info), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-			input := map[string]any{}
-			if args := req.GetArguments(); args != nil {
-				input = args
-			}
+	tools.RegisterAll(server)
 
-			rawInput, err := json.Marshal(input)
-			if err != nil {
-				return mcp.NewToolResultError("invalid tool arguments"), nil
-			}
-
-			result, err := registry.Invoke(ctx, toolName, rawInput)
-			if err != nil {
-				return mcp.NewToolResultError(err.Error()), nil
-			}
-
-			return &mcp.CallToolResult{
-				Content: []mcp.Content{
-					mcp.NewTextContent(toJSONString(result)),
-				},
-				StructuredContent: toStructuredContent(result),
-			}, nil
-		})
-	}
+	handler := mcp.NewStreamableHTTPHandler(func(r *http.Request) *mcp.Server {
+		return server
+	}, nil)
 
 	return &MCPHandler{
-		streamable: server.NewStreamableHTTPServer(
-			mcpServer,
-			server.WithStateLess(true),
-		),
+		streamable: handler,
 	}
 }
 
 func (h *MCPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.streamable.ServeHTTP(w, r)
-}
-
-func toMCPTool(info tools.ToolInfo) mcp.Tool {
-	schemaBytes, err := json.Marshal(info.InputSchema)
-	if err != nil {
-		schemaBytes = []byte(`{"type":"object","properties":{},"required":[]}`)
-	}
-
-	return mcp.Tool{
-		Name:           info.Name,
-		Description:    info.Description,
-		RawInputSchema: schemaBytes,
-	}
-}
-
-func toJSONString(v any) string {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return "{}"
-	}
-	return string(b)
-}
-
-func toStructuredContent(v any) map[string]any {
-	switch val := v.(type) {
-	case map[string]any:
-		return val
-	default:
-		return map[string]any{"result": v}
-	}
 }

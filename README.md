@@ -1,15 +1,15 @@
-# 🚀 MCP Go Boilerplate
+# MCP Go Boilerplate
 
-A minimal, production-ready **Model Context Protocol (MCP) tool server** written in Go.
+A minimal, production-ready **Model Context Protocol (MCP) tool server** written in Go using the [official MCP Go SDK](https://github.com/modelcontextprotocol/go-sdk).
 
 This project provides a clean foundation for building MCP-compatible tool servers that can be used by AI agents (Claude, local agents, etc.) or any client capable of making HTTP requests.
 
 It includes:
 
-- structured tool system
-- automatic tool discovery
-- JSON schema for tool inputs
-- HTTP transport
+- structured tool system using the official SDK
+- automatic tool discovery via `init()` registration
+- JSON schema inference from Go struct tags
+- HTTP transport (Streamable HTTP)
 - optional JWT authentication
 - structured logging
 - test suite
@@ -35,10 +35,7 @@ internal/
     logging.go
     requestid.go
   tools/
-    tool.go
-    registry.go
-    builtins.go
-    errors.go
+    register.go
     echo.go
   transport/
     mcp.go
@@ -155,81 +152,54 @@ Tools are implemented inside:
 internal/tools/
 ```
 
-Each tool must implement the Tool interface.
-
-```go
-type Tool interface {
-	Name() string
-	Description() string
-	InputSchema() map[string]any
-	Invoke(ctx context.Context, input []byte) (any, error)
-}
-```
+Each tool uses the official MCP Go SDK's `mcp.AddTool` function with typed input/output structs.
 
 ## Example Tool
 
-Example implementation:
+Example implementation (~30 lines):
 
 ```go
 package tools
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"strings"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-type ExampleTool struct{}
-
-type ExampleInput struct {
-	Message string `json:"message"`
+type EchoInput struct {
+	Message string `json:"message" jsonschema:"Message to echo back"`
+	Upper   bool   `json:"upper,omitempty" jsonschema:"Whether to uppercase the message"`
 }
 
-type ExampleResult struct {
-	Response string `json:"response"`
+type EchoOutput struct {
+	Echo string `json:"echo"`
 }
 
 func init() {
-	MustRegisterTool(NewExampleTool)
+	MustRegister(func(s *mcp.Server) {
+		mcp.AddTool(s, &mcp.Tool{
+			Name:        "echo_message",
+			Description: "Returns the provided message",
+		}, Echo)
+	})
 }
 
-func NewExampleTool() Tool {
-	return &ExampleTool{}
-}
-
-func (t *ExampleTool) Name() string {
-	return "example_tool"
-}
-
-func (t *ExampleTool) Description() string {
-	return "Example tool"
-}
-
-func (t *ExampleTool) InputSchema() map[string]any {
-	return map[string]any{
-		"type": "object",
-		"properties": map[string]any{
-			"message": map[string]any{
-				"type": "string",
-			},
-		},
-		"required": []string{"message"},
-		"additionalProperties": false,
+func Echo(ctx context.Context, req *mcp.CallToolRequest, input EchoInput) (*mcp.CallToolResult, EchoOutput, error) {
+	out := input.Message
+	if input.Upper {
+		out = strings.ToUpper(out)
 	}
-}
-
-func (t *ExampleTool) Invoke(ctx context.Context, input []byte) (any, error) {
-	var req ExampleInput
-
-	if err := json.Unmarshal(input, &req); err != nil {
-		return nil, fmt.Errorf("%w: invalid JSON", ErrInvalidArgument)
-	}
-
-	return ExampleResult{
-		Response: req.Message,
-	}, nil
+	return nil, EchoOutput{Echo: out}, nil
 }
 ```
+
+Key features:
+- Input/output schemas are automatically inferred from Go struct tags
+- `jsonschema` tags provide field descriptions
+- Fields without `omitempty` in the `json` tag are required
+- Error handling is automatic - return an error and it's wrapped in the result
 
 ## Automatic Tool Registration
 
@@ -237,7 +207,9 @@ Tools register themselves automatically via:
 
 ```go
 func init() {
-	MustRegisterTool(NewExampleTool)
+	MustRegister(func(s *mcp.Server) {
+		mcp.AddTool(s, &mcp.Tool{...}, handler)
+	})
 }
 ```
 
@@ -322,10 +294,8 @@ make test
 
 Tests cover:
 
-- tool registry
-- tool naming conventions
-- JSON schema validation
-- transport handler
+- tool handler functions
+- transport handler (MCP protocol)
 - HTTP server
 
 ## License

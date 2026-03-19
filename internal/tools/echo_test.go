@@ -2,83 +2,49 @@ package tools
 
 import (
 	"context"
-	"errors"
 	"testing"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-func TestEchoToolMetadata(t *testing.T) {
-	tool := NewEchoTool()
+func TestEcho(t *testing.T) {
+	ctx := context.Background()
+	req := &mcp.CallToolRequest{}
 
-	if tool.Name() != "echo_message" {
-		t.Fatalf("unexpected name: %q", tool.Name())
-	}
-
-	if tool.Description() == "" {
-		t.Fatal("expected non-empty description")
-	}
-
-	schema := tool.InputSchema()
-	if schema["type"] != "object" {
-		t.Fatalf("unexpected schema type: %#v", schema["type"])
-	}
-}
-
-func TestEchoToolInvoke(t *testing.T) {
-	tool := NewEchoTool()
-
-	got, err := tool.Invoke(context.Background(), []byte(`{"message":"hello"}`))
+	res, out, err := Echo(ctx, req, EchoInput{Message: "hello"})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-
-	res, ok := got.(EchoResult)
-	if !ok {
-		t.Fatalf("unexpected result type: %T", got)
+	if res != nil {
+		t.Fatalf("expected nil result, got %v", res)
 	}
-
-	if res.Echo != "hello" {
-		t.Fatalf("unexpected echo: %q", res.Echo)
+	if out.Echo != "hello" {
+		t.Fatalf("unexpected echo: %q", out.Echo)
 	}
 }
 
-func TestEchoToolInvokeUpper(t *testing.T) {
-	tool := NewEchoTool()
+func TestEchoUpper(t *testing.T) {
+	ctx := context.Background()
+	req := &mcp.CallToolRequest{}
 
-	got, err := tool.Invoke(context.Background(), []byte(`{"message":"hello","upper":true}`))
+	_, out, err := Echo(ctx, req, EchoInput{Message: "hello", Upper: true})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-
-	res, ok := got.(EchoResult)
-	if !ok {
-		t.Fatalf("unexpected result type: %T", got)
-	}
-
-	if res.Echo != "HELLO" {
-		t.Fatalf("unexpected echo: %q", res.Echo)
+	if out.Echo != "HELLO" {
+		t.Fatalf("unexpected echo: %q", out.Echo)
 	}
 }
 
-func TestEchoToolInvokeInvalidJSON(t *testing.T) {
-	tool := NewEchoTool()
+func TestEchoEmptyMessage(t *testing.T) {
+	ctx := context.Background()
+	req := &mcp.CallToolRequest{}
 
-	_, err := tool.Invoke(context.Background(), []byte(`{"message":`))
-	if err == nil {
-		t.Fatal("expected error")
+	_, out, err := Echo(ctx, req, EchoInput{Message: ""})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if !errors.Is(err, ErrInvalidArgument) {
-		t.Fatalf("expected ErrInvalidArgument, got %v", err)
-	}
-}
-
-func TestEchoToolInvokeMissingMessage(t *testing.T) {
-	tool := NewEchoTool()
-
-	_, err := tool.Invoke(context.Background(), []byte(`{}`))
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !errors.Is(err, ErrInvalidArgument) {
-		t.Fatalf("expected ErrInvalidArgument, got %v", err)
+	if out.Echo != "" {
+		t.Fatalf("unexpected echo: %q", out.Echo)
 	}
 }

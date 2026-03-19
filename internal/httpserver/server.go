@@ -9,7 +9,6 @@ import (
 	"github.com/andr1an/mcp-go-boilerplate/internal/auth"
 	"github.com/andr1an/mcp-go-boilerplate/internal/config"
 	"github.com/andr1an/mcp-go-boilerplate/internal/middleware"
-	"github.com/andr1an/mcp-go-boilerplate/internal/tools"
 	"github.com/andr1an/mcp-go-boilerplate/internal/transport"
 )
 
@@ -20,12 +19,9 @@ type Server struct {
 func New(cfg config.Config, logger *slog.Logger, version string) (*Server, error) {
 	mux := http.NewServeMux()
 
-	registry := tools.NewRegistry()
-	tools.RegisterBuiltins(registry)
-
 	mux.HandleFunc("/health", healthHandler)
 	mux.Handle("/mcp", chain(
-		transport.NewMCPHandler(registry, version),
+		transport.NewMCPHandler(version),
 		middleware.RequestID,
 		middleware.Logging(logger),
 		buildAuthMiddleware(cfg),
